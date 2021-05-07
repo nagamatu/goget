@@ -31,13 +31,14 @@ func lastModifiedDate(dir, fileName string) (*time.Time, error) {
 	return &t, nil
 }
 
-func dependPackageNameList(tags string) ([]string, error) {
+func dependPackageNameList(dir, tags string) ([]string, error) {
 	var args []string
 	if tags != "" {
 		args = append(args, "-tags", tags)
 	}
 	shArgs := append([]string{"-c", getDependPackageNameListCommand, sh}, args...)
 	cmd := exec.Command(sh, shArgs...)
+	cmd.Dir = dir
 	cmd.Env = append(cmd.Env, os.ExpandEnv("GOPATH=${GOPATH}"))
 	cmd.Env = append(cmd.Env, os.ExpandEnv("PATH=${PATH}"))
 	cmd.Env = append(cmd.Env, os.ExpandEnv("HOME=${HOME}"))
@@ -130,13 +131,13 @@ func goget(gopath, slug string, t *time.Time) error {
 	return gitReset(gopath, slug, commitID)
 }
 
-func gogetAll(gopath string) error {
-	md, err := lastModifiedDate(".", ".")
+func gogetAll(gopath, dir string) error {
+	md, err := lastModifiedDate(dir, ".")
 	if err != nil {
 		return err
 	}
 
-	list, err := dependPackageNameList("")
+	list, err := dependPackageNameList(dir, "")
 	if err != nil {
 		return err
 	}
@@ -152,13 +153,17 @@ func gogetAll(gopath string) error {
 }
 
 func main() {
+	dir := "."
+	if len(os.Args) > 1 {
+		dir = os.Args[1]
+	}
 	gopath, ok := os.LookupEnv("GOPATH")
 	if !ok {
 		fmt.Fprintf(os.Stderr, "error: GOPATH not defined")
 		os.Exit(1)
 	}
 
-	if err := gogetAll(gopath); err != nil {
+	if err := gogetAll(gopath, dir); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}

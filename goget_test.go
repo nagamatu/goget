@@ -45,7 +45,7 @@ func (t *gogetTestSuite) Test_lastModifiedDate_falure() {
 
 func (t *gogetTestSuite) Test_dependPackageNameList() {
 	expected := []string{"github.com/pkg/errors"}
-	actual, err := dependPackageNameList("")
+	actual, err := dependPackageNameList(".", "")
 	t.Assert().NoError(err)
 	t.Assert().Equal(expected, actual)
 }
@@ -110,7 +110,7 @@ func (t *gogetTestSuite) Test_gogetAll() {
 	t.Assert().NoError(err)
 	defer os.RemoveAll(gopath)
 
-	err = gogetAll(gopath)
+	err = gogetAll(gopath, ".")
 	t.Assert().NoError(err)
 
 	_, err = os.Stat(path.Join(gopath, "src", "github.com", "pkg", "errors", "stack.go"))
