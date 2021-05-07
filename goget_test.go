@@ -43,7 +43,7 @@ func (t *gogetTestSuite) Test_lastModifiedDate() {
 	t.Assert().NoError(err)
 	actual, err := lastModifiedDate(".", "README.md")
 	t.Assert().NoError(err)
-	t.Assert().Equal(expected, *actual)
+	t.Assert().True(expected.Equal(*actual))
 }
 
 func (t *gogetTestSuite) Test_lastModifiedDate_falure() {
@@ -59,10 +59,20 @@ func (t *gogetTestSuite) Test_dependPackageNameList() {
 }
 
 func (t *gogetTestSuite) Test_commitIDForTime() {
-	gopath := os.Getenv("GOPATH")
+	gopath, err := ioutil.TempDir("", "test*")
+	t.Assert().NoError(err)
+	defer os.RemoveAll(gopath)
+
+	slug := "github.com/nagamatu/goget"
+
+	err = prepareDirectory(gopath, slug)
+	t.Assert().NoError(err)
+	err = gitClone(gopath, slug)
+	t.Assert().NoError(err)
+
 	tm, err := time.Parse(iso8601Format, "2021-05-07T16:17:20+09:00")
 	t.Assert().NoError(err)
-	actual, err := commitIDForTime(gopath, "github.com/nagamatu/goget", &tm)
+	actual, err := commitIDForTime(gopath, slug, &tm)
 	t.Assert().NoError(err)
 	t.Assert().Equal("1dc3271aaafc89687f5971bd95c2130ecac307b8", actual)
 }
