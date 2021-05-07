@@ -38,14 +38,6 @@ func (t *gogetTestSuite) Test_dependSlugList() {
 	}
 }
 
-func (t *gogetTestSuite) Test_lastModifiedDate() {
-	expected, err := time.Parse(iso8601Format, "2021-05-07T16:18:10+09:00")
-	t.Assert().NoError(err)
-	actual, err := lastModifiedDate(".", "README.md")
-	t.Assert().NoError(err)
-	t.Assert().True(expected.Equal(*actual))
-}
-
 func (t *gogetTestSuite) Test_lastModifiedDate_falure() {
 	_, err := lastModifiedDate(".", "notexists")
 	t.Assert().Error(err)
@@ -88,7 +80,7 @@ func (t *gogetTestSuite) Test_gitClone() {
 	err = gitClone(gopath, slug)
 	t.Assert().NoError(err)
 
-	expected, err := time.Parse(iso8601Format, "2021-05-07T16:18:10+09:00")
+	expected, err := time.Parse(iso8601Format, "2021-05-07T18:57:39+09:00")
 	t.Assert().NoError(err)
 	md, err := lastModifiedDate(path.Join(gopath, "src", slug), "README.md")
 	t.Assert().NoError(err)
