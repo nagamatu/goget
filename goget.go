@@ -14,7 +14,7 @@ import (
 const (
 	sh                              = "/bin/sh"
 	iso8601Format                   = "2006-01-02T15:04:05-07:00"
-	getDependPackageNameListCommand = `go list -f '{{join .Deps "\n"}}' "$@" | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' "$@"`
+	getDependPackageNameListCommand = `go list -f '{{join .Deps "\n"}}' "$@"`
 )
 
 func lastModifiedDate(dir, fileName string) (*time.Time, error) {
@@ -57,7 +57,11 @@ func dependSlugList(pkgs []string) []string {
 	for _, pkg := range pkgs {
 		ss := strings.Split(pkg, "/")
 		if len(ss) < 3 {
-			fmt.Fprintf(os.Stderr, "warning: ignore package %s\n", pkg)
+			continue
+		}
+		// only support repository for github.com.
+		// this skips standard package with three hierarchy layer.
+		if ss[0] != "github.com" {
 			continue
 		}
 		slugMap[path.Join(ss[0], ss[1], ss[2])] = true
