@@ -12,9 +12,7 @@ import (
 )
 
 const (
-	sh                              = "/bin/sh"
-	iso8601Format                   = "2006-01-02T15:04:05-07:00"
-	getDependPackageNameListCommand = `go list -f '{{join .Deps "\n"}}' "$@"`
+	iso8601Format = "2006-01-02T15:04:05-07:00"
 )
 
 func lastModifiedDate(dir, fileName string) (*time.Time, error) {
@@ -32,16 +30,12 @@ func lastModifiedDate(dir, fileName string) (*time.Time, error) {
 }
 
 func dependPackageNameList(dir, tags string) ([]string, error) {
-	var args []string
+	args := []string{"list", "-f", `{{join .Deps "\n"}}`}
 	if tags != "" {
 		args = append(args, "-tags", tags)
 	}
-	shArgs := append([]string{"-c", getDependPackageNameListCommand, sh}, args...)
-	cmd := exec.Command(sh, shArgs...)
+	cmd := exec.Command("go", args...)
 	cmd.Dir = dir
-	cmd.Env = append(cmd.Env, os.ExpandEnv("GOPATH=${GOPATH}"))
-	cmd.Env = append(cmd.Env, os.ExpandEnv("PATH=${PATH}"))
-	cmd.Env = append(cmd.Env, os.ExpandEnv("HOME=${HOME}"))
 	o, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, errors.WithStack(errors.Wrap(err, string(o)))
@@ -151,7 +145,7 @@ func gogetAll(gopath, dir string) error {
 	for _, slug := range slugs {
 		fmt.Printf("%s\n", slug)
 		if err := goget(gopath, slug, md); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "error: %+v\n", err)
 			continue
 		}
 	}
@@ -170,7 +164,7 @@ func main() {
 	}
 
 	if err := gogetAll(gopath, dir); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error: %+v\n", err)
 		os.Exit(1)
 	}
 }
