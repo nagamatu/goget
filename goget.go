@@ -112,6 +112,7 @@ func prepareDirectory(gopath, slug string) error {
 
 func goget(gopath, slug string, t *time.Time) error {
 	if _, err := os.Stat(path.Join(gopath, "src", slug)); !os.IsNotExist(err) {
+		fmt.Printf("already exist: %s\n", path.Join(gopath, "src", slug))
 		return nil
 	}
 
@@ -144,6 +145,7 @@ func gogetAll(gopath, dir string) error {
 
 	slugs := dependSlugList(list)
 	for _, slug := range slugs {
+		fmt.Printf("%s\n", slug)
 		if err := goget(gopath, slug, md); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			continue
