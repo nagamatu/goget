@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"go/parser"
@@ -34,27 +36,35 @@ func lastModifiedDate(dir, fileName string) (*time.Time, error) {
 }
 
 func dependPackageNameListByFiles(dir string) ([]string, error) {
-	fset := token.NewFileSet()
-	mp, err := parser.ParseDir(fset, dir, func(inf os.FileInfo) bool {
-		return strings.HasSuffix(inf.Name(), ".go")
-	}, 0)
+	cmd := exec.Command("find", dir, "-name", "*.go", "-print")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.WithStack(errors.Wrap(err, string(out)))
+	}
+	files := []string{}
+	scanner := bufio.NewScanner(bytes.NewBuffer(out))
+	for scanner.Scan() {
+		line := scanner.Text()
+		files = append(files, line)
 	}
 
 	duplicateCheck := make(map[string]bool)
 	pkgs := []string{}
-	for _, p := range mp {
-		for _, f := range p.Files {
-			for _, i := range f.Imports {
-				pkg := i.Path.Value
-				pkg = strings.TrimSuffix(strings.TrimPrefix(pkg, "\""), "\"")
-				if duplicateCheck[pkg] {
-					continue
-				}
-				pkgs = append(pkgs, pkg)
-				duplicateCheck[pkg] = true
+
+	fset := token.NewFileSet()
+	for _, f := range files {
+		ast, err := parser.ParseFile(fset, f, nil, parser.ImportsOnly)
+		if err != nil {
+			continue
+		}
+		for _, i := range ast.Imports {
+			pkg := i.Path.Value
+			pkg = strings.TrimSuffix(strings.TrimPrefix(pkg, "\""), "\"")
+			if duplicateCheck[pkg] {
+				continue
 			}
+			pkgs = append(pkgs, pkg)
+			duplicateCheck[pkg] = true
 		}
 	}
 
@@ -122,6 +132,8 @@ func gitReset(gopath, slug, commitID string) error {
 func goGet(gopath, slug string) error {
 	cmd := exec.Command("go", "get", slug)
 	cmd.Dir = gopath
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "GO111MODULE=off")
 	_, _ = cmd.CombinedOutput()
 	return nil
 }
