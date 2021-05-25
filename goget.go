@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"path"
@@ -31,6 +33,34 @@ func lastModifiedDate(dir, fileName string) (*time.Time, error) {
 	return &t, nil
 }
 
+func dependPackageNameListByFiles(dir string) ([]string, error) {
+	fset := token.NewFileSet()
+	mp, err := parser.ParseDir(fset, dir, func(inf os.FileInfo) bool {
+		return strings.HasSuffix(inf.Name(), ".go")
+	}, 0)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	duplicateCheck := make(map[string]bool)
+	pkgs := []string{}
+	for _, p := range mp {
+		for _, f := range p.Files {
+			for _, i := range f.Imports {
+				pkg := i.Path.Value
+				pkg = strings.TrimSuffix(strings.TrimPrefix(pkg, "\""), "\"")
+				if duplicateCheck[pkg] {
+					continue
+				}
+				pkgs = append(pkgs, pkg)
+				duplicateCheck[pkg] = true
+			}
+		}
+	}
+
+	return pkgs, nil
+}
+
 func dependPackageNameList(dir, tags string) ([]string, error) {
 	args := []string{"list", "-f", `{{join .Deps "\n"}}`}
 	if tags != "" {
@@ -40,7 +70,8 @@ func dependPackageNameList(dir, tags string) ([]string, error) {
 	cmd.Dir = dir
 	o, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.WithStack(errors.Wrap(err, string(o)))
+		// if go list doesn't work, try to use parser.ParseDir instead
+		return dependPackageNameListByFiles(dir)
 	}
 	if len(o) == 0 {
 		return nil, nil
