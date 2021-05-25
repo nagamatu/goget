@@ -203,9 +203,9 @@ func gogetAll(gopath, dir string, md *time.Time) error {
 			}
 			continue
 		}
-		// if err := gogetAll(gopath, path.Join(gopath, "src", slug), md); err != nil {
-		//	fmt.Fprintf(os.Stderr, "%v\n", err)
-		// }
+		if err := gogetAll(gopath, path.Join(gopath, "src", slug), md); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+		}
 	}
 	return nil
 }
