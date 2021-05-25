@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -130,12 +131,7 @@ func goget(gopath, slug string, t *time.Time) error {
 	return gitReset(gopath, slug, commitID)
 }
 
-func gogetAll(gopath, dir string) error {
-	md, err := lastModifiedDate(dir, ".")
-	if err != nil {
-		return err
-	}
-
+func gogetAll(gopath, dir string, md *time.Time) error {
 	list, err := dependPackageNameList(dir, "")
 	if err != nil {
 		return err
@@ -152,19 +148,39 @@ func gogetAll(gopath, dir string) error {
 	return nil
 }
 
-func main() {
-	dir := "."
-	if len(os.Args) > 1 {
-		dir = os.Args[1]
+func doGet(dir, gopath, slug string) error {
+	md, err := lastModifiedDate(dir, ".")
+	if err != nil {
+		return err
 	}
+
+	if slug != "" {
+		return goget(gopath, slug, md)
+	}
+	return gogetAll(gopath, dir, md)
+}
+
+func main() {
+	var dir string
+	var slug string
+	flag.StringVar(&slug, "slug", "", "slug for repository (optional)")
+	flag.StringVar(&dir, "dir", ".", "directory for dependency")
+	flag.Parse()
+
 	gopath, ok := os.LookupEnv("GOPATH")
 	if !ok {
 		fmt.Fprintf(os.Stderr, "error: GOPATH not defined")
 		os.Exit(1)
 	}
 
-	if err := gogetAll(gopath, dir); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %+v\n", err)
+	if dir == "." && slug == "" {
+		if len(os.Args) > 1 {
+			dir = os.Args[1]
+		}
+	}
+
+	if err := doGet(dir, gopath, slug); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }

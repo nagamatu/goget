@@ -44,7 +44,7 @@ func (t *gogetTestSuite) Test_lastModifiedDate_falure() {
 }
 
 func (t *gogetTestSuite) Test_dependPackageNameList() {
-	expected := []string{"bytes", "context", "errors", "fmt", "github.com/pkg/errors", "internal/bytealg", "internal/cpu", "internal/fmtsort", "internal/oserror", "internal/poll", "internal/race", "internal/reflectlite", "internal/syscall/execenv", "internal/syscall/unix", "internal/testlog", "internal/unsafeheader", "io", "math", "math/bits", "os", "os/exec", "path", "path/filepath", "reflect", "runtime", "runtime/internal/atomic", "runtime/internal/math", "runtime/internal/sys", "sort", "strconv", "strings", "sync", "sync/atomic", "syscall", "time", "unicode", "unicode/utf8", "unsafe"}
+	expected := []string{"bytes", "context", "errors", "flag", "fmt", "github.com/pkg/errors", "internal/bytealg", "internal/cpu", "internal/fmtsort", "internal/oserror", "internal/poll", "internal/race", "internal/reflectlite", "internal/syscall/execenv", "internal/syscall/unix", "internal/testlog", "internal/unsafeheader", "io", "math", "math/bits", "os", "os/exec", "path", "path/filepath", "reflect", "runtime", "runtime/internal/atomic", "runtime/internal/math", "runtime/internal/sys", "sort", "strconv", "strings", "sync", "sync/atomic", "syscall", "time", "unicode", "unicode/utf8", "unsafe"}
 	actual, err := dependPackageNameList(".", "")
 	t.Assert().NoError(err)
 	t.Assert().Equal(expected, actual)
@@ -110,7 +110,10 @@ func (t *gogetTestSuite) Test_gogetAll() {
 	t.Assert().NoError(err)
 	defer os.RemoveAll(gopath)
 
-	err = gogetAll(gopath, ".")
+	dir := "."
+	md, err := lastModifiedDate(dir, ".")
+	t.Assert().NoError(err)
+	err = gogetAll(gopath, dir, md)
 	t.Assert().NoError(err)
 
 	_, err = os.Stat(path.Join(gopath, "src", "github.com", "pkg", "errors", "stack.go"))
