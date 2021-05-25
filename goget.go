@@ -57,7 +57,7 @@ func dependSlugList(pkgs []string) []string {
 		}
 		// only support repository for github.com.
 		// this skips standard package with three hierarchy layer.
-		if ss[0] != "github.com" {
+		if !strings.Contains(ss[0], ".") {
 			continue
 		}
 		slugMap[path.Join(ss[0], ss[1], ss[2])] = true
@@ -88,7 +88,18 @@ func gitReset(gopath, slug, commitID string) error {
 	return nil
 }
 
+func goGet(gopath, slug string) error {
+	cmd := exec.Command("go", "get", slug)
+	cmd.Dir = gopath
+	_, _ = cmd.CombinedOutput()
+	return nil
+}
+
 func gitClone(gopath, slug string) error {
+	ss := strings.Split(slug, "/")
+	if ss[0] != "github.com" {
+		return goGet(gopath, slug)
+	}
 	dir, _ := path.Split(slug)
 	cmd := exec.Command("git", "clone", fmt.Sprintf("https://%s.git", slug))
 	cmd.Dir = path.Join(gopath, "src", dir)
@@ -110,16 +121,18 @@ func prepareDirectory(gopath, slug string) error {
 	return nil
 }
 
+var errAlreadyExists = errors.New("already exists")
+
 func goget(gopath, slug string, t *time.Time) error {
 	if _, err := os.Stat(path.Join(gopath, "src", slug)); !os.IsNotExist(err) {
-		fmt.Printf("already exist: %s\n", path.Join(gopath, "src", slug))
-		return nil
+		return errors.Wrap(errAlreadyExists, path.Join(gopath, "src", slug))
 	}
 
 	if err := prepareDirectory(gopath, slug); err != nil {
 		return err
 	}
 
+	fmt.Printf("%s\n", slug)
 	if err := gitClone(gopath, slug); err != nil {
 		return err
 	}
@@ -135,15 +148,19 @@ func goget(gopath, slug string, t *time.Time) error {
 func gogetAll(gopath, dir string, md *time.Time) error {
 	list, err := dependPackageNameList(dir, "")
 	if err != nil {
-		return err
+		return nil
 	}
 
 	slugs := dependSlugList(list)
 	for _, slug := range slugs {
-		fmt.Printf("%s\n", slug)
 		if err := goget(gopath, slug, md); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %+v\n", err)
+			if errors.Cause(err) != errAlreadyExists {
+				fmt.Fprintf(os.Stderr, "%+v\n", err)
+			}
 			continue
+		}
+		if err := gogetAll(gopath, path.Join(gopath, "src", slug), md); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
 		}
 	}
 	return nil
