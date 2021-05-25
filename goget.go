@@ -93,15 +93,16 @@ func dependSlugList(pkgs []string) []string {
 	slugMap := make(map[string]bool)
 	for _, pkg := range pkgs {
 		ss := strings.Split(pkg, "/")
-		if len(ss) < 3 {
-			continue
-		}
-		// only support repository for github.com.
-		// this skips standard package with three hierarchy layer.
+		// first word is ssas that must has dot for domain name
 		if !strings.Contains(ss[0], ".") {
 			continue
 		}
-		slugMap[path.Join(ss[0], ss[1], ss[2])] = true
+		switch {
+		case len(ss) >= 3:
+			slugMap[path.Join(ss[0], ss[1], ss[2])] = true
+		case len(ss) == 2:
+			slugMap[path.Join(ss[0], ss[1])] = true
+		}
 	}
 	var slugs []string = nil
 	for slug := range slugMap {
@@ -202,9 +203,9 @@ func gogetAll(gopath, dir string, md *time.Time) error {
 			}
 			continue
 		}
-		if err := gogetAll(gopath, path.Join(gopath, "src", slug), md); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-		}
+		// if err := gogetAll(gopath, path.Join(gopath, "src", slug), md); err != nil {
+		//	fmt.Fprintf(os.Stderr, "%v\n", err)
+		// }
 	}
 	return nil
 }

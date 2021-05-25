@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"testing"
 	"time"
 
@@ -29,7 +30,11 @@ func (t *gogetTestSuite) Test_dependSlugList() {
 			[]string{"github.com/stretchr/testify"},
 		},
 		{
-			[]string{"github.com/pkg"},
+			[]string{"gopkg.in/yaml.v2"},
+			[]string{"gopkg.in/yaml.v2"},
+		},
+		{
+			[]string{"github.com"},
 			nil,
 		},
 	} {
@@ -47,6 +52,8 @@ func (t *gogetTestSuite) Test_dependPackageNameList() {
 	expected := []string{"bufio", "bytes", "context", "errors", "flag", "fmt", "github.com/pkg/errors", "go/ast", "go/parser", "go/scanner", "go/token", "internal/bytealg", "internal/cpu", "internal/fmtsort", "internal/oserror", "internal/poll", "internal/race", "internal/reflectlite", "internal/syscall/execenv", "internal/syscall/unix", "internal/testlog", "internal/unsafeheader", "io", "io/ioutil", "math", "math/bits", "os", "os/exec", "path", "path/filepath", "reflect", "runtime", "runtime/internal/atomic", "runtime/internal/math", "runtime/internal/sys", "sort", "strconv", "strings", "sync", "sync/atomic", "syscall", "time", "unicode", "unicode/utf8", "unsafe"}
 	actual, err := dependPackageNameList(".", "")
 	t.Assert().NoError(err)
+	sort.Strings(actual)
+	sort.Strings(expected)
 	t.Assert().Equal(expected, actual)
 }
 
@@ -129,7 +136,9 @@ func (t *gogetTestSuite) Test_dependPackageNameListByFiles() {
 	pkgs, err := dependPackageNameListByFiles(".")
 	t.Assert().NoError(err)
 	expected := []string{
-		"bufio", "bytes", "flag", "fmt", "go/parser", "go/token", "os", "os/exec", "path", "path/filepath", "strings", "time", "github.com/pkg/errors", "io/ioutil", "testing", "github.com/stretchr/testify/suite",
+		"bufio", "bytes", "flag", "fmt", "go/parser", "go/token", "os", "os/exec", "path", "path/filepath", "sort", "strings", "time", "github.com/pkg/errors", "io/ioutil", "testing", "github.com/stretchr/testify/suite",
 	}
+	sort.Strings(pkgs)
+	sort.Strings(expected)
 	t.Assert().Equal(expected, pkgs)
 }
