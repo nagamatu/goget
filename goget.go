@@ -202,6 +202,5 @@ func main() {
 
 	if err := doGet(dir, gopath, slug); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
 	}
 }
