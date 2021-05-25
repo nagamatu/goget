@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -155,7 +156,10 @@ func doGet(dir, gopath, slug string) error {
 	}
 
 	if slug != "" {
-		return goget(gopath, slug, md)
+		if err := goget(gopath, slug, md); err != nil {
+			return err
+		}
+		dir = filepath.Join(gopath, "src", slug)
 	}
 	return gogetAll(gopath, dir, md)
 }
